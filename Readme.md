@@ -11,7 +11,7 @@ Compile and insert the rootkit by running:
 <pre> touch __UNO & ls & rm __UNO </pre>
 
 hide files:
-<pre> everything beginning wit "kir" are hidden </pre>
+<pre> everything beginning wit "kir" gets hidden </pre>
 
 The files:
 <pre>
