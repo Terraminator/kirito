@@ -19,4 +19,4 @@ The files:
 /etc/ld.so.preload
 /lib/libc.kir.so.6
 </pre>
-will be hidden in the future
+will be immutable in the future
