@@ -20,3 +20,6 @@ The files:
 /lib/libc.kir.so.6
 </pre>
 will be immutable in the future
+
+Remove the rootkit with:
+<pre> bash remove.sh </pre>
