@@ -5,7 +5,7 @@ This rootkit is based on this tutorial:
 
 Compile and insert the rootkit by running:
 <pre> bash make.sh </pre>
-you may need to change /lib/ to something like /lib/x86_64-linux-gnu/ this is specific for the distribution
+you maybe need to change /lib/ to something like /lib/x86_64-linux-gnu/ this is specific for the distribution
 (Remember you need to change the port and ip address in the script)
 
 <h1> Get a reverse shell with: </h1>
