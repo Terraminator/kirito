@@ -12,15 +12,13 @@ you maybe need to change /lib/ to something like /lib/x86_64-linux-gnu/ this is 
 <pre> touch __UNO & ls & rm __UNO </pre>
 
 hide files:
-<pre> everything beginning wit "kir" gets hidden </pre>
+<pre> everything beginning wit "kir" or "asu" gets hidden </pre>
 
-The files:
-<pre>
-/root/king.txt
-/etc/ld.so.preload
-/lib/libc.kir.so.6
-</pre>
-will be immutable in the future
+hide content of files:
+<pre> just add a line containing "hiro" at the end of the file </pre>
+
+disables ioctl and ps automatically
+
 
 Remove the rootkit with:
 <pre> bash remove.sh </pre>
