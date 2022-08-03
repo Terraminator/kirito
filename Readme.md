@@ -1,5 +1,7 @@
 <h1> This is a rootkit for playing king of the hill on tryhackme </h1>
 
+DO ONLY USE THIS IN PRIVATE GAMES BECAUSE IT IS GAME BREAKING
+
 This rootkit is based on this tutorial:
 <h1> https://h0mbre.github.io/Learn-C-By-Creating-A-Rootkit/# </h1>
 
